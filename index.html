@@ -24,6 +24,7 @@
             <a href="#pages">Pages</a>
             <a href="#shop">Shop</a>
             <a href="#contact">Contact</a>
+            <a href="#cart">cart</a>
         </nav>
     </header>
 
@@ -45,7 +46,7 @@
                     <i class="fab fa-whatsapp"></i>
                 </a>
 
-                <a href=https://www.instagram.com/olad.pupo07?igsh=MTNlanF0emdkNWNsdA== target="_blank">
+                <a href="https://instagram.com/Oladipupo075" target="_blank">
                     <i class="fab fa-instagram"></i>
                 </a>
 
@@ -72,11 +73,6 @@
 
     <!-- Shop Section -->
     <section id="shop" class="section">
-        <h2>Our Products</h2>
-
-        <div class="shop-container">
-
-           <section id="shop" class="section">
     <h2>Our Products</h2>
 
     <div class="shop-container">
@@ -105,12 +101,51 @@
             <button>Buy Now</button>
         </div>
 
-    
+    </div>
 </section>
-            </div>
 
-        </div>
-    </section>
+
+<section id="cart" class="section">
+    <h2>Shopping Cart 🛒</h2>
+
+    <div class="cart-container">
+
+        <div class="cart-item" data-price="25000">
+    <img src="protein powder.jpg" alt="Protein Powder">
+    <div>
+        <h3>Protein Powder</h3>
+        <p>₦25,000</p>
+    </div>
+    <input type="number" value="1" min="1" class="quantity">
+</div>
+
+<div class="cart-item" data-price="8000">
+    <img src="images-_4_.jpg" alt="Gym Gloves">
+    <div>
+        <h3>Gym Gloves</h3>
+        <p>₦8,000</p>
+    </div>
+    <input type="number" value="1" min="1" class="quantity">
+</div>
+
+<div class="cart-item" data-price="3500">
+    <img src="bottle.png" alt="Water Bottle">
+    <div>
+        <h3>Water Bottle</h3>
+        <p>₦3,500</p>
+    </div>
+    <input type="number" value="1" min="1" class="quantity">
+</div>
+
+<div class="cart-total">
+    <h3 id="total">Total: ₦36,500</h3>
+</div>
+<button class="checkout-btn" id="paystack-btn">
+    Proceed to Checkout
+</button>
+<!-- Load the inline integration script right before your custom script -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+</section>
 
     <!-- Contact Section -->
     <section id="contact" class="section">
@@ -119,7 +154,7 @@
         <form class="contact-form">
             <input type="text" placeholder="Your Name" required>
 
-            <input type="email" placeholder="Your Email" required>
+          <input type="email" id="customer-email" placeholder="Your Email" required>
 
             <textarea rows="5"
             placeholder="Your Message"></textarea>
@@ -135,6 +170,7 @@
         <p>&copy; 2026 GymStack. All Rights Reserved.</p>
     </footer>
     <script>
+// Smooth scroll for nav links
 // Smooth scroll for nav links
 document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', function (e) {
@@ -153,7 +189,7 @@ document.querySelectorAll('nav a').forEach(link => {
 });
 
 
-// Active link highlight on scroll
+// Active link highlight on scroll (Fixed to prevent console errors)
 window.addEventListener("scroll", () => {
     let sections = document.querySelectorAll("section");
     let navLinks = document.querySelectorAll("nav a");
@@ -165,16 +201,41 @@ window.addEventListener("scroll", () => {
         let id = section.getAttribute("id");
 
         if (top >= offset && top < offset + height) {
-            navLinks.forEach(link => {
-                link.classList.remove("active");
-                document.querySelector("nav a[href*=" + id + "]").classList.add("active");
-            });
+            const activeLink = document.querySelector("nav a[href*=" + id + "]");
+            if (activeLink) {
+                navLinks.forEach(link => link.classList.remove("active"));
+                activeLink.classList.add("active");
+            }
         }
     });
 });
 
 
-// Shop button click
+// Calculate and update cart totals
+function updateTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".cart-item").forEach(item => {
+        const price = Number(item.dataset.price);
+        const quantity = Number(item.querySelector(".quantity").value);
+
+        total += price * quantity;
+    });
+
+    document.getElementById("total").textContent =
+        "Total: ₦" + total.toLocaleString();
+}
+
+// Update when quantity changes
+document.querySelectorAll(".quantity").forEach(input => {
+    input.addEventListener("input", updateTotal);
+});
+
+// Calculate on page load
+updateTotal();
+
+
+// Shop button click handler
 document.querySelectorAll(".shop-card button").forEach(button => {
     button.addEventListener("click", () => {
         alert("Item added to cart 🛒");
@@ -182,7 +243,58 @@ document.querySelectorAll(".shop-card button").forEach(button => {
 });
 
 
-// Contact form submission
+// Integrated Dynamic Paystack Pop Checkout
+document.getElementById("paystack-btn").addEventListener("click", () => {
+    // 1. Get total amount from your existing UI calculations
+    let totalText = document.getElementById("total").textContent;
+    let amount = Number(totalText.replace(/[^0-9]/g, '')); // Strips out symbols and commas
+
+    if (amount <= 0) {
+        alert("Your cart is empty! 🛒");
+        return;
+    }
+
+    // 2. Fetch the input email from your contact form dynamically
+    let contactEmailField = document.querySelector(".contact-form input[type='email']");
+    let emailInput = contactEmailField ? contactEmailField.value.trim() : "";
+
+    // 3. Fallback check if they haven't filled out the contact form yet
+    if (!emailInput || !emailInput.includes("@")) {
+        emailInput = prompt("Please enter your email address to complete your order receipt:");
+        
+        if (!emailInput || !emailInput.includes("@")) {
+            alert("A valid email address is required to process payments. 🛑");
+            return;
+        }
+        // Sync it back visually to your contact field input panel
+        if (contactEmailField) contactEmailField.value = emailInput;
+    }
+
+    // 4. Open secure payment popup setup
+    let handler = PaystackPop.setup({
+        key: 'pk_test_f24e58ff8455f990f6f3af2066aa68ebb8c11a87', // ⚠️ Replace with your live public key from Paystack Dashboard
+        email: emailInput,                  
+        amount: amount * 100,                // Paystack takes amount in kobo (multiply Naira by 100)
+        currency: 'NGN',
+        ref: 'GYM-' + Math.floor((Math.random() * 1000000000) + 1), // Generates unique transaction reference
+        
+        callback: function(response){
+            alert('Thank you for shopping with GymStack! Payment successful. Reference: ' + response.reference + ' 💪');
+            
+            // Clear cart values back to 1 upon success
+            document.querySelectorAll(".quantity").forEach(input => input.value = 1);
+            updateTotal();
+        },
+        onClose: function(){
+            alert('Transaction cancelled. Your gear is still waiting in your cart!');
+        }
+    });
+
+    handler.openIframe();
+});
+
+
+// Contact form submission handler
 document.querySelector(".contact-form").addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -194,3 +306,4 @@ document.querySelector(".contact-form").addEventListener("submit", function (e) 
 
 </body>
 </html>
+
